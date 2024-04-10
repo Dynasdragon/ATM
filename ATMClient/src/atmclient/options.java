@@ -133,34 +133,36 @@ public class options extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        atmgui loginframe = new atmgui();
-        loginframe.setVisible(true);
-        loginframe.pack();
-        loginframe.setLocationRelativeTo(null);
+
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        Deposit depositframe = new Deposit();
-        depositframe.setVisible(true);
-        depositframe.pack();
-        depositframe.setLocationRelativeTo(null);
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        Withdraw withdrawframe = new Withdraw();
-        withdrawframe.setVisible(true);
-        withdrawframe.pack();
-        withdrawframe.setLocationRelativeTo(null);
+
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        Balance balanceframe = new Balance();
-        balanceframe.setVisible(true);
-        balanceframe.pack();
-        balanceframe.setLocationRelativeTo(null);
+
     }//GEN-LAST:event_jButton4ActionPerformed
 
- 
+         public javax.swing.JButton getLogoutBtn(){
+        return jButton5;
+    }
+        
+    public javax.swing.JButton getDepositBtn(){
+        return jButton2;
+    }
+    
+    public javax.swing.JButton getWithdrawBtn(){
+        return jButton3;
+    }
+    
+    public javax.swing.JButton getBalanceBtn(){
+        return jButton4;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton2;

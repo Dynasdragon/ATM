@@ -35,6 +35,9 @@ public class BankServer {
     private static final byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
     private static final SecretKey sharedKey = new SecretKeySpec(Arrays.copyOf(keyBytes, 16), "AES");
     private static final SecretKey macKey = new SecretKeySpec(Arrays.copyOf(keyBytes, 16), MAC_ALGORITHM);
+    private static SecretKey encryptionKey;
+    private static SecretKey macKey2;
+    private static boolean useDerived = false;
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -61,35 +64,64 @@ public class BankServer {
         public void run() {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
-
                 String request;
                 String username = null;
 
                 while ((request = in.readLine()) != null) {
+                    //decrypt message
+                    try{
+                        if(useDerived){        
+                            System.out.println("Encrypted w/o shared:" + request);
+                            request = decrypt(request, encryptionKey);
+                            System.out.println("Decrypted:" + request);
+                        }else{
+                            System.out.println("Encrypted w/ shared:" + request);
+                            request = decrypt(request, sharedKey);
+                            System.out.println("Decrypted:" + request);
+                        }
+                    }catch(Exception e){
+                        System.err.println("Decryption error: " + e.getMessage());
+                        e.printStackTrace();
+                    }
                     switch (request) {
                         case "REGISTER":
-                            username = in.readLine();
-                            String password = in.readLine();
+                            String password = "";
+                            try{
+                                username = decrypt(in.readLine(),sharedKey);
+                                password = decrypt(in.readLine(),sharedKey);
+                            }catch(Exception e){
+                                System.err.println("Decryption error: " + e.getMessage());
+                                e.printStackTrace();
+                            }
                             String registrationResult = registerUser(username, password);
                             out.println(registrationResult);
                             break;
                         case "LOGIN":
-                            username = in.readLine();
-                            password = in.readLine();
+                            password = "";
+                            try{
+                                username = decrypt(in.readLine(),sharedKey);
+                                password = decrypt(in.readLine(),sharedKey);
+                            }catch(Exception e){
+                                System.err.println("Decryption error: " + e.getMessage());
+                                e.printStackTrace();
+                            }
                             boolean loggedIn = loginUser(username, password);
                             out.println(loggedIn ? "LOGGED IN" : "LOGIN FAILED");
+                            if(loggedIn)
+                                performKeyDistributionProtocol(in,out,username);
                             break;
                         case "QUIT":
+                            useDerived = false;
                             logAction("QUIT", "QUIT", "QUIT");
-                            return; // Exit the thread
+                            break;
 
                         case "VIEW BALANCE":
                             if (username != null && userDatabase.containsKey(username)) {
                                 double balance = accountBalances.getOrDefault(username, 0.0);
-                                String balanceMessage = "Your account balance is: $" + balance;
+                                String balanceMessage = ""+balance;
                                 try {
-                                    String encryptedBalanceMessage = encrypt(balanceMessage, sharedKey);
-                                    String mac = generateMAC(encryptedBalanceMessage, macKey);//mac
+                                    String encryptedBalanceMessage = encrypt(balanceMessage, encryptionKey);
+                                    String mac = generateMAC(encryptedBalanceMessage, macKey2);//mac
                                     System.out.println("Encrypted balance message to send: " + encryptedBalanceMessage); // Debugging purpose
                                     out.println(encryptedBalanceMessage);
                                     out.println(mac);
@@ -101,18 +133,23 @@ public class BankServer {
                             } else {
                                 out.println("ERROR: You need to log in first.");
                             }
-                            out.println("OK");
                             break;
                         
                         case "DEPOSIT":
-                            double amount = Double.parseDouble(in.readLine());
+                            double amount = 0;
+                            try{
+                                amount = Double.parseDouble(decrypt(in.readLine(),encryptionKey));
+                            }catch(Exception e){
+                                System.err.println("Decryption error: " + e.getMessage());
+                                e.printStackTrace();
+                            }
                             if (username != null && userDatabase.containsKey(username)) {
                                 accountBalances.merge(username, amount, Double::sum);
                                 String depositMessage = "Deposit successful. New balance: $" + accountBalances.get(username);
                                 // Encrypt the deposit message
                                 try {
-                                    String encryptedDepositMessage = encrypt(depositMessage, sharedKey);
-                                    String mac = generateMAC(encryptedDepositMessage, macKey);//mac
+                                    String encryptedDepositMessage = encrypt(depositMessage, encryptionKey);
+                                    String mac = generateMAC(encryptedDepositMessage, macKey2);//mac
                                     System.out.println("Encrypted deposit message: " + encryptedDepositMessage); // Print the encrypted message for demonstration
                                     out.println(encryptedDepositMessage); // Send the encrypted message
                                     out.println(mac);
@@ -124,11 +161,16 @@ public class BankServer {
                             } else {
                                 out.println("ERROR: You need to log in first.");
                             }
-                            out.println("OK");
                             break;
 
                         case "WITHDRAW":
-                            amount = Double.parseDouble(in.readLine());
+                            amount = 0;
+                            try{
+                                amount = Double.parseDouble(decrypt(in.readLine(),encryptionKey));
+                            }catch(Exception e){
+                                System.err.println("Decryption error: " + e.getMessage());
+                                e.printStackTrace();
+                            }
                             if (username != null && userDatabase.containsKey(username)) {
                                 double currentBalance = accountBalances.getOrDefault(username, 0.0);
                                 if (amount <= currentBalance) {
@@ -136,8 +178,8 @@ public class BankServer {
                                     String withdrawMessage = "Withdrawal successful. New balance: $" + accountBalances.get(username);
                                     // Encrypt the withdraw message
                                     try {
-                                        String encryptedWithdrawMessage = encrypt(withdrawMessage, sharedKey);
-                                        String mac = generateMAC(encryptedWithdrawMessage, macKey);//mac
+                                        String encryptedWithdrawMessage = encrypt(withdrawMessage, encryptionKey);
+                                        String mac = generateMAC(encryptedWithdrawMessage, macKey2);//mac
                                         System.out.println("Encrypted withdraw message: " + encryptedWithdrawMessage); // Print the encrypted message for demonstration
                                         out.println(encryptedWithdrawMessage); // Send the encrypted message
                                         out.println(mac);
@@ -149,8 +191,8 @@ public class BankServer {
                                 } else {
                                     String error = "ERROR: Insufficient funds.";
                                     try {
-                                        String encryptedErrorMessage = encrypt(error, sharedKey);
-                                        String mac = generateMAC(encryptedErrorMessage, macKey);
+                                        String encryptedErrorMessage = encrypt(error, encryptionKey);
+                                        String mac = generateMAC(encryptedErrorMessage, macKey2);
                                         System.out.println("Encrypted error message: " + encryptedErrorMessage); // Print the encrypted message for demonstration
                                         out.println(encryptedErrorMessage);
                                         out.println(mac);
@@ -162,7 +204,6 @@ public class BankServer {
                             } else {
                                 out.println("ERROR: You need to log in first.");
                             }
-                            out.println("OK");
                             break;
                         
                     }
@@ -175,7 +216,7 @@ public class BankServer {
 
         private synchronized String registerUser(String username, String password) {
             if (userDatabase.containsKey(username)) {
-                return "ERROR: User already exists. Please try a different username.";
+                return "ERROR: User with that username already exists.";
             } else {
                 userDatabase.put(username, password); // In production, use hashed password
                 accountBalances.put(username, 0.0);
@@ -272,12 +313,12 @@ public class BankServer {
 
                  // Derive Data Encryption Key and MAC Key from Master Secret
                  SecretKey[] keys = deriveKeysFromMasterSecret(masterSecret);
-                 SecretKey encryptionKey = keys[0];
-                 SecretKey macKey = keys[1];
+                 encryptionKey = keys[0];
+                 macKey2 = keys[1];
                  System.out.println("Data Encryption Key and MAC Key derived.");
  
                  // Indicate to the client that the key distribution protocol was successful
-                 out.println("KEY DISTRIBUTION COMPLETE");
+                 useDerived = true;
                   } catch (Exception e) {
                 throw new IOException("Key distribution failed", e);
             }

@@ -18,8 +18,7 @@ This Secure Banking System is a Java-based application designed to simulate the 
 
 ### Installation
 
-1. Clone the repository:
-https://github.com/abdueee/817-project.git
+1. Clone the repository
 
 2. Navigate to the project directory:
 cd secure-banking-system

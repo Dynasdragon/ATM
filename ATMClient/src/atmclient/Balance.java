@@ -34,6 +34,8 @@ public class Balance extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        errorMsg = new javax.swing.JLabel();
+        balanceText = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -54,7 +56,7 @@ public class Balance extends javax.swing.JFrame {
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setText("Balance Amount: ");
         jPanel3.add(jLabel2);
-        jLabel2.setBounds(40, 150, 170, 30);
+        jLabel2.setBounds(40, 150, 140, 30);
 
         jButton2.setBackground(new java.awt.Color(255, 255, 255));
         jButton2.setText("Home");
@@ -64,7 +66,7 @@ public class Balance extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton2);
-        jButton2.setBounds(50, 230, 90, 32);
+        jButton2.setBounds(50, 230, 90, 23);
 
         jButton3.setBackground(new java.awt.Color(255, 255, 255));
         jButton3.setText("Logout");
@@ -74,7 +76,7 @@ public class Balance extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton3);
-        jButton3.setBounds(180, 230, 90, 32);
+        jButton3.setBounds(180, 230, 90, 23);
 
         jLabel1.setFont(new java.awt.Font("Georgia", 1, 18)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
@@ -82,6 +84,22 @@ public class Balance extends javax.swing.JFrame {
         jLabel1.setText("BALANCE");
         jPanel3.add(jLabel1);
         jLabel1.setBounds(40, 30, 230, 80);
+
+        errorMsg.setVisible(false);
+        errorMsg.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        errorMsg.setForeground(new java.awt.Color(153, 0, 51));
+        errorMsg.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        errorMsg.setText("Integrity check failed! Response might be tampered.");
+        jPanel3.add(errorMsg);
+        errorMsg.setBounds(10, 190, 300, 16);
+
+        balanceText.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        balanceText.setForeground(new java.awt.Color(255, 255, 255));
+        balanceText.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        balanceText.setText("$0.00");
+        balanceText.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jPanel3.add(balanceText);
+        balanceText.setBounds(180, 146, 120, 40);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -97,9 +115,7 @@ public class Balance extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, 0)
-                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 390, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 390, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -108,23 +124,40 @@ public class Balance extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        options optionsframe = new options();
-        optionsframe.setVisible(true);
-        optionsframe.pack();
-        optionsframe.setLocationRelativeTo(null);
-        this.dispose();
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        atmgui loginframe = new atmgui();
-        loginframe.setVisible(true);
-        loginframe.pack();
-        loginframe.setLocationRelativeTo(null);
+
     }//GEN-LAST:event_jButton3ActionPerformed
 
+    public javax.swing.JButton getHomeBtn(){
+        return jButton2;
+    }
     
+    public javax.swing.JButton getLogoutBtn(){
+        return jButton3;
+    }
+    
+    public void showError(){
+        errorMsg.setVisible(true);
+    }
+    
+    public void setMsg (String text){
+        balanceText.setVisible(true);
+        balanceText.setText(""+text);
+    }
+    
+    public void reset(){
+        balanceText.setText("$0.00");
+        errorMsg.setVisible(false);
+    }
+        
+  
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel balanceText;
+    private javax.swing.JLabel errorMsg;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;

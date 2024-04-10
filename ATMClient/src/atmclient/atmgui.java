@@ -5,6 +5,8 @@
  */
 package atmclient;
 
+import java.awt.Color;
+
 /**
  *
  * @author Avneet
@@ -39,6 +41,8 @@ public class atmgui extends javax.swing.JFrame {
         jTextField1 = new javax.swing.JTextField();
         jTextField2 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        errorMsg = new javax.swing.JLabel();
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -83,14 +87,12 @@ public class atmgui extends javax.swing.JFrame {
         jLabel2.setText("Username");
         jPanel3.add(jLabel2);
         jLabel2.setBounds(40, 170, 90, 14);
-        jLabel2.getAccessibleContext().setAccessibleParent(jPanel1);
 
         jLabel3.setFont(new java.awt.Font("Georgia", 1, 12)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
         jLabel3.setText("Password");
         jPanel3.add(jLabel3);
         jLabel3.setBounds(40, 230, 90, 14);
-        jLabel3.getAccessibleContext().setAccessibleParent(jPanel1);
 
         jTextField1.setBackground(new java.awt.Color(255, 255, 255));
         jTextField1.setForeground(new java.awt.Color(0, 0, 0));
@@ -109,14 +111,34 @@ public class atmgui extends javax.swing.JFrame {
 
         jButton1.setBackground(new java.awt.Color(255, 255, 255));
         jButton1.setFont(new java.awt.Font("Georgia", 1, 12)); // NOI18N
-        jButton1.setText("Login");
+        jButton1.setText("Register");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
             }
         });
         jPanel3.add(jButton1);
-        jButton1.setBounds(100, 290, 100, 30);
+        jButton1.setBounds(100, 320, 100, 21);
+
+        jButton2.setBackground(new java.awt.Color(255, 255, 255));
+        jButton2.setFont(new java.awt.Font("Georgia", 1, 12)); // NOI18N
+        jButton2.setText("Login");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton2);
+        jButton2.setBounds(100, 290, 100, 21);
+
+        errorMsg.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        errorMsg.setForeground(new java.awt.Color(204, 0, 51));
+        errorMsg.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        errorMsg.setText("Invalid Login");
+        errorMsg.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        errorMsg.setVisible(false);
+        jPanel3.add(errorMsg);
+        errorMsg.setBounds(0, 260, 320, 16);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -143,20 +165,55 @@ public class atmgui extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField1ActionPerformed
 
+    public String getUsername(){
+        return jTextField1.getText();
+    }
+    
+    public String getPassword(){
+        return jTextField2.getText();
+    }
+    
+        public javax.swing.JButton getLoginBtn(){
+        return jButton2;
+    }
+        
+    public javax.swing.JButton getRegBtn(){
+        return jButton1;
+    }
+    
+    public void setMsg(String text, boolean isGood){
+        if (isGood)
+            errorMsg.setForeground(new Color(0,102,51));
+        else
+            errorMsg.setForeground(new Color(204,0,51));
+        errorMsg.setVisible(true);
+        errorMsg.setText(text);
+    }
+    
+    public void reset(){
+        errorMsg.setVisible(false);
+        jTextField1.setText("");
+        jTextField2.setText("");
+    }
+    
+
+    
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        options optionsframe = new options();
-        optionsframe.setVisible(true);
-        optionsframe.pack();
-        optionsframe.setLocationRelativeTo(null);
-        this.dispose();
+
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
      */
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel errorMsg;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

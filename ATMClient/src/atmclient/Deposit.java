@@ -37,6 +37,7 @@ public class Deposit extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
 
         jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/atmclient/pic5.jpg"))); // NOI18N
         jLabel4.setText("jLabel4");
@@ -63,9 +64,9 @@ public class Deposit extends javax.swing.JFrame {
         jLabel2.setBackground(new java.awt.Color(255, 255, 255));
         jLabel2.setFont(new java.awt.Font("Georgia", 1, 14)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel2.setText("Deposit Amount");
+        jLabel2.setText("Deposit Amount:");
         jPanel3.add(jLabel2);
-        jLabel2.setBounds(40, 120, 120, 30);
+        jLabel2.setBounds(40, 120, 130, 30);
 
         jButton1.setBackground(new java.awt.Color(255, 255, 255));
         jButton1.setText("Confirm ");
@@ -75,7 +76,7 @@ public class Deposit extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton1);
-        jButton1.setBounds(90, 180, 120, 32);
+        jButton1.setBounds(90, 180, 120, 23);
 
         jButton2.setBackground(new java.awt.Color(255, 255, 255));
         jButton2.setText("Home");
@@ -85,7 +86,7 @@ public class Deposit extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton2);
-        jButton2.setBounds(50, 280, 90, 32);
+        jButton2.setBounds(50, 280, 90, 23);
 
         jButton3.setBackground(new java.awt.Color(255, 255, 255));
         jButton3.setText("Logout");
@@ -95,13 +96,22 @@ public class Deposit extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton3);
-        jButton3.setBounds(180, 280, 90, 32);
+        jButton3.setBounds(180, 280, 90, 23);
 
         jLabel1.setFont(new java.awt.Font("Georgia", 1, 18)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setText("DEPOSIT");
         jPanel3.add(jLabel1);
         jLabel1.setBounds(120, 30, 100, 80);
+
+        jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel3.setVisible(false);
+        jLabel3.setForeground(new java.awt.Color(0, 102, 0));
+        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel3.setText("jLabel3");
+        jLabel3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jPanel3.add(jLabel3);
+        jLabel3.setBounds(10, 220, 290, 16);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -130,20 +140,38 @@ public class Deposit extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        atmgui loginframe = new atmgui();
-        loginframe.setVisible(true);
-        loginframe.pack();
-        loginframe.setLocationRelativeTo(null);
+
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-         options optionsframe = new options();
-        optionsframe.setVisible(true);
-        optionsframe.pack();
-        optionsframe.setLocationRelativeTo(null);
-        this.dispose();
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    public String getAmount(){
+        return jTextField1.getText();
+    }
+    
+    public void setMsg(String text){
+        jLabel3.setVisible(true);
+        jLabel3.setText(text);
+    }
+    
+    public void reset(){
+        jTextField1.setText("");
+        jLabel3.setVisible(false);
+    }
+    
+    public javax.swing.JButton getHomeBtn(){
+        return jButton2;
+    }
+    
+    public javax.swing.JButton getLogoutBtn(){
+        return jButton3;
+    }
+        
+    public javax.swing.JButton getDepositBtn(){
+        return jButton1;
+    }
   
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
@@ -151,6 +179,7 @@ public class Deposit extends javax.swing.JFrame {
     private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel2;

@@ -3,16 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-
-
 package atmclient;
 
 /**
  *
  * @author Avneet
  */
-
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
@@ -30,200 +28,298 @@ public class ATMClient {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 15008;
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
-    private static final String MAC_ALGORITHM = "HmacSHA256"; 
+    private static final String MAC_ALGORITHM = "HmacSHA256";
     private static final String keyString = "mySimpleSharedKey";
     private static final byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
     private static final SecretKey sharedKey = new SecretKeySpec(Arrays.copyOf(keyBytes, 16), "AES");
     private static final SecretKey macKey = new SecretKeySpec(Arrays.copyOf(keyBytes, 16), MAC_ALGORITHM);
+    private static final atmgui loginframe = new atmgui();
+    private static final options optionsframe = new options();
+    private static final Balance balanceframe = new Balance();
+    private static final Deposit depositframe = new Deposit();
+    private static final Withdraw withdrawframe = new Withdraw();
+    private static SecretKey encryptionKey;
+    private static SecretKey macKey2;
 
     public static void main(String[] args) {
-        
-        atmgui loginframe = new atmgui();
+
         loginframe.setVisible(true);
         loginframe.pack();
         loginframe.setLocationRelativeTo(null);
-        
-        try (Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))) {
-    
+
+        //Login Screen Buttons
+        javax.swing.JButton loginBtn = loginframe.getLoginBtn();
+        javax.swing.JButton regBtn = loginframe.getRegBtn();
+
+        //Options Screen Buttons
+        javax.swing.JButton logoutBtn = optionsframe.getLogoutBtn();
+        javax.swing.JButton withdrawBtn = optionsframe.getWithdrawBtn();
+        javax.swing.JButton depositBtn = optionsframe.getDepositBtn();
+        javax.swing.JButton balanceBtn = optionsframe.getBalanceBtn();
+
+        //Deposit Screen Buttons
+        javax.swing.JButton depositMoneyBtn = depositframe.getDepositBtn();
+        javax.swing.JButton dHomeBtn = depositframe.getHomeBtn();
+        javax.swing.JButton dLogoutBtn = depositframe.getLogoutBtn();
+
+        //Withdraw Screen Buttons
+        javax.swing.JButton withdrawMoneyBtn = withdrawframe.getWithdrawBtn();
+        javax.swing.JButton wHomeBtn = withdrawframe.getHomeBtn();
+        javax.swing.JButton wLogoutBtn = withdrawframe.getLogoutBtn();
+
+        //Balance Screen Buttons
+        javax.swing.JButton bHomeBtn = balanceframe.getHomeBtn();
+        javax.swing.JButton bLogoutBtn = balanceframe.getLogoutBtn();
+
+        try (Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT); PrintWriter out = new PrintWriter(socket.getOutputStream(), true); BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
+
             System.out.println("Connected to the bank server.");
-            if (!loginOrRegister(out, in, stdIn)) {
-                return; // Stop execution if login/register fails
+            loginBtn.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    try {
+                        if (loginUser(out, in)) {
+                            performKeyDistributionProtocol(out, in);
+                            loginframe.reset();
+                            loginframe.setVisible(false);
+                            optionsframe.setVisible(true);
+                            optionsframe.pack();
+                            optionsframe.setLocationRelativeTo(null);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("An error occurred: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            regBtn.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    try {
+                        registerUser(out, in);
+                    } catch (IOException e) {
+                        System.err.println("An error occurred: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+
+                }
+            });
+
+            depositMoneyBtn.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    try {
+                        depositMoney(out, in);
+                    } catch (IOException e) {
+                        System.err.println("An error occurred: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+
+                }
             }
+            );
+
+            withdrawMoneyBtn.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    try {
+                        withdrawMoney(out, in);
+                    } catch (IOException e) {
+                        System.err.println("An error occurred: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+            );
+
+            balanceBtn.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    try {
+                        optionsframe.setVisible(false);
+                        balanceframe.setVisible(true);
+                        balanceframe.pack();
+                        balanceframe.setLocationRelativeTo(null);
+                        getBalance(out, in);
+                    } catch (IOException e) {
+                        System.err.println("An error occurred: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+            );
+
+            //Add actionlisteners to navigation buttons
+            addNavBtn(logoutBtn, loginframe, optionsframe, 2,out);
+            addNavBtn(withdrawBtn, withdrawframe, optionsframe, 0,null);
+            addNavBtn(depositBtn, depositframe, optionsframe, 0, null);
+            addNavBtn(dHomeBtn, optionsframe, depositframe, 1, null);
+            addNavBtn(dLogoutBtn, loginframe, depositframe, 2, out);
+            addNavBtn(wHomeBtn, optionsframe, withdrawframe, 1, null);
+            addNavBtn(wLogoutBtn, loginframe, withdrawframe, 2, out);
+            addNavBtn(bHomeBtn, optionsframe, balanceframe, 1, null);
+            addNavBtn(bLogoutBtn, loginframe, balanceframe, 2, out);
 
             while (true) {
-                System.out.println("\nSelect an action:");
-                System.out.println("(3) View Balance, (4) Deposit Money, (5) Withdraw Money, (6) Quit");
-                String userAction = stdIn.readLine();
-    
-                if ("6".equals(userAction)) {
-                    out.println("QUIT");
-                    System.out.println("Thank you for using the bank service.");
-                    break; // Exit loop to end program
-                }
-    
-                processUserAction(out, in, stdIn, userAction);
+
             }
-    
+        } catch (IOException e) {
+            System.err.println("An error occurred: " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("An error occurred: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
 
-    private static boolean loginOrRegister(PrintWriter out, BufferedReader in, BufferedReader stdIn)
-            throws IOException {
-        System.out.println("Do you want to (1) Register or (2) Login? (Enter 1 or 2)");
-        String option = stdIn.readLine();
+    private static boolean registerUser(PrintWriter out, BufferedReader in) throws IOException {
+        String username = loginframe.getUsername();
+        String password = loginframe.getPassword();
+        if (!username.equals("") && !password.equals("")) {
+            try {
+                out.println(encrypt("REGISTER",sharedKey));
+                out.println(encrypt(loginframe.getUsername(), sharedKey));
+                out.println(encrypt(loginframe.getPassword(), sharedKey));
+            } catch (Exception e) {
+                System.err.println("Decryption error: " + e.getMessage());
+                e.printStackTrace();
+            }
+            String serverResponse = in.readLine();
+            loginframe.setMsg(serverResponse, (!serverResponse.startsWith("ERROR")));
 
-        if ("1".equals(option)) {
-            return registerUser(out, in, stdIn);
-        } else if ("2".equals(option)) {
-            return loginUser(out, in, stdIn);
-        } else {
-            System.out.println("Invalid option.");
+            return !serverResponse.startsWith("ERROR");
+        }
+        loginframe.setMsg("ERROR: Please enter a valid username and password", false);
+        return false;
+    }
+
+    private static boolean loginUser(PrintWriter out, BufferedReader in) throws IOException {
+        try {
+            out.println(encrypt("LOGIN", sharedKey));
+            out.println(encrypt(loginframe.getUsername(), sharedKey));
+            out.println(encrypt(loginframe.getPassword(), sharedKey));
+
+            String serverResponse = in.readLine();
+            loginframe.setMsg(serverResponse, ("LOGGED IN".equals(serverResponse)));
+
+            return "LOGGED IN".equals(serverResponse);
+        } catch (Exception e) {
+            System.err.println("Decryption error: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
 
-    private static boolean registerUser(PrintWriter out, BufferedReader in, BufferedReader stdIn) throws IOException {
-        System.out.println("Enter username for registration:");
-        String username = stdIn.readLine();
-        System.out.println("Enter password for registration:");
-        String password = stdIn.readLine();
-
-        out.println("REGISTER");
-        out.println(username);
-        out.println(password);
-
-        String serverResponse = in.readLine();
-        System.out.println(serverResponse);
-
-        return !serverResponse.startsWith("ERROR");
+    private static void addNavBtn(javax.swing.JButton button, javax.swing.JFrame nextFrame, javax.swing.JFrame lastFrame, int choice, PrintWriter out) {
+        button.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                switch (choice) {
+                    case 1: //return to home page
+                        depositframe.reset();
+                        withdrawframe.reset();
+                        balanceframe.reset();
+                        break;
+                    case 2: //logout
+                        try{
+                        out.println(encrypt("QUIT",encryptionKey));
+                        }catch(Exception e){
+                            System.err.println("Encryption error: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    default:
+                        break;
+                }
+                lastFrame.setVisible(false);
+                nextFrame.setVisible(true);
+                nextFrame.pack();
+                nextFrame.setLocationRelativeTo(null);
+            }
+        });
     }
 
-    private static boolean loginUser(PrintWriter out, BufferedReader in, BufferedReader stdIn) throws IOException {
-        System.out.println("Enter username for login:");
-        String username = stdIn.readLine();
-        System.out.println("Enter password for login:");
-        String password = stdIn.readLine();
-
-        out.println("LOGIN");
-        out.println(username);
-        out.println(password);
-
-        String serverResponse = in.readLine();
-        System.out.println(serverResponse);
-
-        return "LOGGED IN".equals(serverResponse);
-    }
-
-    private static void processUserAction(PrintWriter out, BufferedReader in, BufferedReader stdIn, String action)
-            throws IOException {
-        switch (action) {
-
-            case "3": // VIEW BALANCE
-                out.println("VIEW BALANCE");
-                String encryptedResponse = in.readLine(); // Receive encrypted balance
-                String receivedMAC = in.readLine(); // Receive MAC
-                System.out.println("Received encrypted balance info: " + encryptedResponse); // For debugging
-                try {
-                    String decryptedResponse = decrypt(encryptedResponse, sharedKey);
-
-                    // Verify MAC for integrity
-                    if (verifyMAC(encryptedResponse, receivedMAC, macKey)) {
-                        System.out.println("Decrypted balance info: " + decryptedResponse); // Show decrypted message
-                        // logAction("VIEW BALANCE", "Requested");
-                    } else {
-                        System.out.println("Integrity check failed! Response might be tampered.");
-                    }
-                    
-                } catch (Exception e) {
-                    System.err.println("Decryption error: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                break;
-
-            case "4": // DEPOSIT
-                System.out.println("Enter amount to deposit:");
-                String amount = stdIn.readLine();
-                out.println("DEPOSIT");
-                out.println(amount);
-                // Read the encrypted response from the server
-                encryptedResponse = in.readLine();
-                receivedMAC = in.readLine(); // Receive MAC
-                System.out.println("Received encrypted deposit confirmation: " + encryptedResponse); // Print the encrypted message
-                // Decrypt the response
-                try {
-                    String decryptedResponse = decrypt(encryptedResponse, sharedKey);
-
-                    // Verify MAC for integrity
-                    if (verifyMAC(encryptedResponse, receivedMAC, macKey)) {
-                        System.out.println("Decrypted deposit confirmation: " + decryptedResponse); // Display the decrypted message
-                    } else {
-                        System.out.println("Integrity check failed! Response might be tampered.");
-                    }
-                    
-                } catch (Exception e) {
-                    System.err.println("Decryption error: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                break;
-
-            case "5": // WITHDRAW
-                System.out.println("Enter amount to withdraw:");
-                amount = stdIn.readLine();
-                out.println("WITHDRAW");
-                out.println(amount);
-                // Read the encrypted response from the server
-                encryptedResponse = in.readLine();
-                receivedMAC = in.readLine(); // Receive MAC
-                System.out.println("Received encrypted withdrawal confirmation: " + encryptedResponse); // Print the encrypted message
-                // Decrypt the response
-                try {
-                    String decryptedResponse = decrypt(encryptedResponse, sharedKey);
-
-                    // Verify MAC for integrity
-                    if (verifyMAC(encryptedResponse, receivedMAC, macKey)) {
-                        System.out.println("Decrypted withdrawal confirmation: " + decryptedResponse); // Display the decrypted message
-                    } else {
-                        System.out.println("Integrity check failed! Response might be tampered.");
-                    }
-                    
-                } catch (Exception e) {
-                    System.err.println("Decryption error: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                break;
-            
+    private static void depositMoney(PrintWriter out, BufferedReader in) throws IOException {
+        String amount = depositframe.getAmount();
+        try{
+            out.println(encrypt("DEPOSIT",encryptionKey));
+            out.println(encrypt(amount,encryptionKey));
+        }catch(Exception e){
+            System.err.println("Encryption error: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        // Read and display server response for valid actions
-        System.out.println("\nReading Server Response....");
-        String serverResponse = in.readLine();
-        System.out.println("\nServer response received....");
-        System.out.println(serverResponse);
-        System.out.println("\nFunctionality Successful!");
-    }
-
-    private static void logAction(String action, String amount) {
+        // Read the encrypted response from the server
+        String encryptedResponse = in.readLine();
+        String receivedMAC = in.readLine(); // Receive MAC
+        System.out.println("Received encrypted deposit confirmation: " + encryptedResponse); // Print the encrypted message
+        // Decrypt the response
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("audit_log.txt", true));
-            writer.write(getCurrentDateTime() + " - " + action + ", Amount: $" + amount);
-            writer.newLine();
-            writer.close();
-        } catch (IOException e) {
+            String decryptedResponse = decrypt(encryptedResponse, encryptionKey);
+
+            // Verify MAC for integrity
+            if (verifyMAC(encryptedResponse, receivedMAC, macKey2)) {
+                depositframe.setMsg(decryptedResponse); // Display the decrypted message
+            } else {
+                depositframe.setMsg("Integrity check failed! Response might be tampered.");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Decryption error: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private static String getCurrentDateTime() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date date = new Date();
-        return formatter.format(date);
+    private static void withdrawMoney(PrintWriter out, BufferedReader in) throws IOException {
+        System.out.println("Enter amount to withdraw:");
+        String amount = withdrawframe.getAmount();
+        try{
+            out.println(encrypt("WITHDRAW",encryptionKey));
+            out.println(encrypt(amount,encryptionKey));
+        }catch(Exception e){
+            System.err.println("Encryption error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        // Read the encrypted response from the server
+        String encryptedResponse = in.readLine();
+        String receivedMAC = in.readLine(); // Receive MAC
+        System.out.println("Received encrypted withdrawal confirmation: " + encryptedResponse); // Print the encrypted message
+        // Decrypt the response
+        try {
+            String decryptedResponse = decrypt(encryptedResponse, encryptionKey);
+
+            // Verify MAC for integrity
+            if (verifyMAC(encryptedResponse, receivedMAC, macKey2)) {
+                withdrawframe.setMsg(decryptedResponse); // Display the decrypted message
+            } else {
+                withdrawframe.setMsg("Integrity check failed! Response might be tampered.");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Decryption error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void getBalance(PrintWriter out, BufferedReader in) throws IOException {
+        try{
+        out.println(encrypt("VIEW BALANCE",encryptionKey));
+        }catch(Exception e){
+            System.err.println("Encryption error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        String encryptedResponse = in.readLine(); // Receive encrypted balance
+        String receivedMAC = in.readLine(); // Receive MAC
+        System.out.println("Received encrypted balance info: " + encryptedResponse); // For debugging
+        try {
+            String decryptedResponse = decrypt(encryptedResponse, encryptionKey);
+
+            // Verify MAC for integrity
+            if (verifyMAC(encryptedResponse, receivedMAC, macKey2)) {
+                balanceframe.setMsg("$"+decryptedResponse); // Show decrypted message
+            } else {
+                balanceframe.showError();
+            }
+
+        } catch (Exception e) {
+            System.err.println("Decryption error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private static void performKeyDistributionProtocol(PrintWriter out, BufferedReader in) throws IOException {
@@ -242,8 +338,8 @@ public class ATMClient {
 
             // Derive Data Encryption Key and MAC Key from Master Secret
             SecretKey[] keys = deriveKeysFromMasterSecret(masterSecret);
-            SecretKey encryptionKey = keys[0];
-            SecretKey macKey = keys[1];
+            encryptionKey = keys[0];
+            macKey2 = keys[1];
             System.out.println("Data Encryption Key and MAC Key derived.");
 
             // Indicate completion
@@ -291,9 +387,9 @@ public class ATMClient {
 
         // Create SecretKey objects from the byte arrays
         SecretKey encryptionKey = new SecretKeySpec(encryptionKeyBytes, "AES");
-        SecretKey macKey = new SecretKeySpec(macKeyBytes, "AES"); // Use "HmacSHA256" for HMAC operations
+        SecretKey macKey = new SecretKeySpec(macKeyBytes, MAC_ALGORITHM); // Use "HmacSHA256" for HMAC operations
 
-        return new SecretKey[] { encryptionKey, macKey };
+        return new SecretKey[]{encryptionKey, macKey};
     }
 
     private static boolean verifyMAC(String data, String receivedMAC, SecretKey key) throws Exception {
